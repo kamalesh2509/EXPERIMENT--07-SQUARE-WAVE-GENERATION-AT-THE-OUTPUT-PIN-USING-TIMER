@@ -53,29 +53,184 @@ Step1: Open CubeMX & Create New Project
 Step2: Choose The Target MCU & Double-Click Its Name select the target to be programmed  as shown below and click on next 
 
 Step3: Configure Timer2 Peripheral To Operate In PWM Mode With CH1 Output
+![241576207-682c851a-7dfe-4089-8395-f76088d43896](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/097ea921-d942-454f-9a14-9a72d7509e2f)
 
 Step4: Set The RCC External Clock Source
+![241576223-8888af3b-63e2-4760-a51b-17b477763941](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/9285ea6d-38c3-4768-92ca-b134dc1239bf)
 
 Step5: Go To The Clock Configuration
 
 Step6: Set The System Clock To Be 72MHz
+![241576233-4ea03faa-fb90-4b31-8079-3db5f959f2c3](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/47c5dbe5-b424-41d0-ba0e-701d64cc5778)
 
 Step7: Name & Generate The Project Initialization Code For CubeIDE or The IDE You’re Using
 
 Step8.  Creating Proteus project and running the simulation .We are now at the last part of step by step guide on how to simulate STM32 project in Proteus.
 
 Step9. Create a new Proteus project and place STM32F40xx i.e. the same MCU for which the project was created in STM32Cube IDE. 
+![241576374-4f377f5e-bdda-489e-a416-c712c893831d](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/9fd5d3fd-c3fe-4d28-8361-ffacd4fa8420)
 
 Step10. Double click on the the MCU part to open settings. Next to the Program File option, give full path to the Hex file generated using STM32Cube IDE. Then set the external crystal frequency to 8M (i.e. 8 MHz). Click OK to save the changes.
 
  
 Step11. click on debug and simulate using simulation
+![241576387-b8efbfc2-f0c5-4106-8117-3a6e7ac87f6c](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/b8c313a2-95de-49fe-81f9-2e59d42450c5)
 
 ## STM 32 CUBE PROGRAM :
+```
+#include "main.h"
 
+TIM_HandleTypeDef htim2;
 
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_TIM2_Init(void);
+int main(void)
+{
+  HAL_Init();
 
+  SystemClock_Config();
 
+  MX_GPIO_Init();
+  MX_TIM2_Init();
+
+  HAL_TIM_Base_Start(&htim2);
+  HAL_TIM_PWM_Init(&htim2);
+  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+
+  while (1)
+  {
+  }
+
+}
+
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+static void MX_TIM2_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 10000;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 7000;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_TIM_MspPostInit(&htim2);
+
+}
+
+static void MX_GPIO_Init(void)
+{
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+}
+
+void Error_Handler(void)
+{
+  __disable_irq();
+  while (1)
+  {
+  }
+
+}
+
+#ifdef  USE_FULL_ASSERT
+
+void assert_failed(uint8_t *file, uint32_t line)
+{
+
+}
+#endif
+```
+## DUTY CYCLE AND FREQUENCY CALCULATION
+### FOR DUTY RATIO 50%
+![321933788-5bccadbe-a182-4d07-a7e3-63e54c0bfd47](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/1ed105ab-c283-43d9-8345-ce3d7148e4cb)
+TON = 0.6ms
+
+TOFF= 0.6ms
+
+TOTAL TIME = 1.2ms
+
+FREQUENCY = 1/(1.2ms) = 833.33Hz
+
+### FOR DUTY RATIO 70%
+![321934306-ac49d393-e7a6-48aa-904f-dc3a7555bcd6](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/e7a5c07e-61c0-406d-8dcf-545c61e5ce0d)
+TON = 0.84ms
+
+TOFF= 0.36
+
+TOTAL TIME = 1.2ms
+
+FREQUENCY = 1/(1.2ms) = 833.33Hz
+### FOR DUTY RATIO 90%
+![321968889-4ca495c4-a7e4-4754-a48d-7afb0522e7aa](https://github.com/kamalesh2509/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/120444689/a576454f-c56c-46fe-91a6-95f75345f3d2)
+TON = 1.08ms
+
+TOFF= 0.12ms
+
+TOTAL TIME = 1.2ms
+
+FREQUENCY = 1/(1.2ms) = 833.33Hz
 
 ## Output screen shots of proteus  :
  
@@ -86,31 +241,6 @@ Step11. click on debug and simulate using simulation
  
  ![image](https://github.com/R-Guruprasad/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/119390308/a82d15bc-ad8e-4765-9835-b76e9720427a)
 
-## DUTY CYCLE AND FREQUENCY CALCULATION 
-FOR PULSE AT 5000
-![image](https://github.com/R-Guruprasad/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/119390308/ff40e5bb-6d52-4a01-861b-1c236d0bf4ff)
-
-TON = 
-TOFF=
-TOTAL TIME = 
-FREQUENCY = 1/(TOTAL TIME)
-
-FOR PULSE AT 7000
-![image](https://github.com/R-Guruprasad/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/119390308/8f4ed4cd-9d00-429a-a9f3-c16dc0403a50)
-
-TON = 
-TOFF=
-TOTAL TIME = 
-FREQUENCY = 1/(TOTAL TIME)
-
-
-FOR PULSE AT 9000
-![image](https://github.com/R-Guruprasad/EXPERIMENT--07-SQUARE-WAVE-GENERATION-AT-THE-OUTPUT-PIN-USING-TIMER/assets/119390308/e723309c-ba05-4084-9cca-730ba13f7928)
-
-TON = 
-TOFF=
-TOTAL TIME = 
-FREQUENCY = 1/(TOTAL TIME)
 
 
 ## Result :
